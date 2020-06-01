@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 
-
 current_dir = os.path.split(os.path.realpath(__file__))[0]
 
 
@@ -24,7 +23,8 @@ def preprocess_movieslens(history_items_num=5):
         samples = []
         if len(histories) > history_items_num:
             for i in range(history_items_num, len(histories)):
-                sample = ['{},{}'.format(hist[0], hist[1]) for hist in histories[i - history_items_num: i]]
+                sample = ['{},{}'.format(hist[0], hist[1]) for hist in
+                          histories[i - history_items_num: i]]
                 label = histories[i][0]
                 samples.append('{}\t{}\t{}'.format(user, '|'.join(sample), label))
         elif len(histories) > 1:
@@ -55,13 +55,5 @@ def preprocess_movieslens(history_items_num=5):
         _ = [print(sample, file=f) for sample in test_datas]
 
 
-
 if __name__ == '__main__':
     preprocess_movieslens()
-
-
-
-
-
-
-

@@ -7,7 +7,7 @@ class NLR_model:
     def __init__(self, user_embedding_dim=256, item_embedding_dim=256,
                  hidden1_dim=512, hidden2_dim=256, num_users=100,
                  num_items=1000, learning_rate=1e-3, warmup_steps=4000.,
-                 l2_weight=1e-4, logical_weight=0.1):
+                 l2_weight=1e-4, logical_weight=0.1, interact_type='sum'):
         # hyper param
         self.user_embedding_dim = user_embedding_dim
         self.item_embedding_dim = item_embedding_dim
@@ -18,8 +18,9 @@ class NLR_model:
         self.learning_rate = learning_rate
         self.l2_weight = l2_weight
         self.logical_weight = logical_weight
-        self.activation = tf.nn.relu
         self.warmup_steps = warmup_steps
+        self.interact_type = interact_type
+        self.activation = tf.nn.relu
 
         # input
         with tf.name_scope('input_tensor'):
@@ -27,7 +28,7 @@ class NLR_model:
             self.input_items = tf.placeholder(dtype=tf.int32, shape=[None, None],
                                               name='input_items')
             self.input_feedback_score = tf.placeholder(dtype=tf.float32, shape=[None, None],
-                                              name='input_feedback_score')
+                                                       name='input_feedback_score')
             self.input_target = tf.placeholder(dtype=tf.int32, shape=[None, 1], name='input_target')
             self.input_negative_sample = tf.placeholder(dtype=tf.int32, shape=[None, 1],
                                                         name='input_negative_sample')
@@ -56,20 +57,23 @@ class NLR_model:
 
         # interaction
         self.encoder = interact_encoder(self.user_emb_vec, self.item_emb_vec, self.hidden1_dim,
-                                        self.hidden2_dim, activation=self.activation)
+                                        self.hidden2_dim, activation=self.activation,
+                                        interact_type=self.interact_type)
         self.encoder_pos = interact_encoder(self.user_emb_vec, self.target_emb_vec,
                                             self.hidden1_dim, self.hidden2_dim,
-                                            activation=self.activation)
+                                            activation=self.activation,
+                                            interact_type=self.interact_type)
         self.encoder_neg = interact_encoder(self.user_emb_vec, self.negative_sample_emb_vec,
                                             self.hidden1_dim, self.hidden2_dim,
-                                            activation=self.activation)
+                                            activation=self.activation,
+                                            interact_type=self.interact_type)
 
         # NOT(*) operation
         feedback_to_oper = self.input_feedback_score[:, :, tf.newaxis] * tf.ones_like(self.encoder)
         applicable = tf.equal(feedback_to_oper, 1)
         encoder_to_oper = tf.where(applicable, self.encoder, tf.zeros_like(self.encoder))
         not_encoder = not_modules(encoder_to_oper, self.hidden1_dim, self.hidden2_dim,
-                                       activation=self.activation)
+                                  activation=self.activation)
         self.not_encoder = tf.where(applicable, not_encoder, self.encoder)
 
         # OR(*) operation
@@ -118,6 +122,7 @@ class NLR_model:
         # train
         self.train_op = self.optimizer.minimize(self.loss, global_step=global_step)
 
+        # tensorboard scalar
         tf.summary.scalar('loss', self.loss)
         tf.summary.scalar('traget_loss', self.traget_loss)
         tf.summary.scalar('l2_loss', self.l2_loss)
@@ -128,6 +133,10 @@ class NLR_model:
         self.summaries = tf.summary.merge_all()
 
     def logical_regularizer(self, event_space):
+        '''
+        Build logical regularizers.
+        The regularizers make NOT([T])=[F], and so on.
+        '''
         F_vec = not_modules(self.T, self.hidden1_dim, self.hidden2_dim, activation=self.activation)
         not_event = not_modules(event_space, self.hidden1_dim, self.hidden2_dim,
                                 activation=self.activation)
@@ -150,8 +159,21 @@ class NLR_model:
 
         return reg_1 + reg_2 + reg_7 + reg_8 + reg_9 + reg_10
 
-    def train(self):
-        return
-
-    def eval(self):
-        pass
+    def get_hyper_parameter(self):
+        '''
+        Return all hyper-parameters.
+        '''
+        params = {
+            'user_embedding_dim': self.user_embedding_dim,
+            'item_embedding_dim': self.item_embedding_dim,
+            'hidden1_dim': self.hidden1_dim,
+            'hidden2_dim': self.hidden2_dim,
+            'num_users': self.num_users,
+            'num_items': self.num_items,
+            'learning_rate': self.learning_rate,
+            'l2_weight': self.l2_weight,
+            'logical_weight': self.logical_weight,
+            'warmup_steps': self.warmup_steps,
+            'interact_type': self.interact_type
+        }
+        return params

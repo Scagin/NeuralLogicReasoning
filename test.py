@@ -17,15 +17,18 @@ def test():
     test_users, test_hist_items, test_scores, test_labels = data_loader.load_test_datas(
         hp.test_datas, hp.is_with_feedback)
 
-    user_2_id, item_2_id = utils.load_training_info(hp.checkpoint_dir)
+    user_2_id, item_2_id, train_hypers = utils.load_training_info(hp.checkpoint_dir)
     id_2_item = {id: item for item, id in item_2_id.items()}
 
-    model = NLR_model(user_embedding_dim=hp.user_emb_dim, item_embedding_dim=hp.item_emb_dim,
-                      hidden1_dim=hp.hidden1_dim, hidden2_dim=hp.hidden2_dim,
-                      num_users=len(user_2_id), num_items=len(item_2_id), learning_rate=hp.lr,
-                      l2_weight=hp.l2_weight)
+    model = NLR_model(user_embedding_dim=train_hypers.get('user_embedding_dim'),
+                      item_embedding_dim=train_hypers.get('item_embedding_dim'),
+                      hidden1_dim=train_hypers.get('hidden1_dim'),
+                      hidden2_dim=train_hypers.get('hidden2_dim'),
+                      num_users=train_hypers.get('num_users'),
+                      num_items=train_hypers.get('num_items'),
+                      interact_type=train_hypers.get('interact_type'))
 
-    saver = tf.train.Saver(max_to_keep=5)
+    saver = tf.train.Saver()
     with tf.Session() as sess:
         # restore
         saver.restore(sess, hp.ckpt)

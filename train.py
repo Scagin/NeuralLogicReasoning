@@ -55,6 +55,7 @@ def train():
     parser = hparams.parser
     hp = parser.parse_args()
 
+    # read datas
     train_users, train_hist_items, train_scores, \
     train_labels, user_2_id, item_2_id = data_loader.load_train_datas(hp.train_datas,
                                                                       hp.is_with_feedback)
@@ -62,10 +63,12 @@ def train():
     eval_users, eval_hist_items, eval_scores, eval_labels, _, _ = data_loader.load_train_datas(
         hp.eval_datas, hp.is_with_feedback)
 
+    # build model
     model = NLR_model(user_embedding_dim=hp.user_emb_dim, item_embedding_dim=hp.item_emb_dim,
                       hidden1_dim=hp.hidden1_dim, hidden2_dim=hp.hidden2_dim,
                       num_users=len(user_2_id), num_items=len(item_2_id), learning_rate=hp.lr,
-                      l2_weight=hp.l2_weight, warmup_steps=hp.warmup_steps)
+                      l2_weight=hp.l2_weight, warmup_steps=hp.warmup_steps,
+                      interact_type=hp.interact_type)
 
     saver = tf.train.Saver(max_to_keep=5)
     with tf.Session() as sess:
@@ -74,7 +77,8 @@ def train():
         if ckpt is None:
             logging.info('Initializing from scratch')
             sess.run(tf.global_variables_initializer())
-            utils.save_training_info(user_2_id, item_2_id, hp.checkpoint_dir)
+            utils.save_training_info(user_2_id, item_2_id, model.get_hyper_parameter(),
+                                     hp.checkpoint_dir)
         else:
             saver.restore(sess, ckpt)
 

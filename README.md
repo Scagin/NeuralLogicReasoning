@@ -37,7 +37,7 @@ python data_preprocess.py
 python train.py
 ```
 Also you can change the default hyper-parameters by 2 ways. 
-One is modifying the `hyper_params.py`file.
+One is modifying the `hyper_params.py` file.
 And the other is like following.
 ```shell script
 python train.py --user_emb_dim 128 \
@@ -49,7 +49,12 @@ python train.py --user_emb_dim 128 \
                 --num_epochs 20
 ```
 
-After that you can see logs are printed.
+After that you can see logs are printed. Also the tensorboard.
+
+- Tensorboard curve
+
+![lr noam](./fig/fig1.png)    ![logical loss](./fig/fig2.png)   
+![l2 loss](./fig/fig3.png)    ![loss curve](./fig/fig4.png)
 
 ### Test
 - Run
@@ -63,8 +68,6 @@ python test.py --ckpt model_ckpt/test1/nlr-13500
 The results may be not satisfying.***
 
 ### Note
-
-- adding multiple merge type, between `user_emb` and `item_emb`, like`sum`, `mean`, `concat`, `multiply` etc.
 
 - adding fast searching strategy, making inference faster.
 

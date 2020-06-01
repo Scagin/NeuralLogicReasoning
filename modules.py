@@ -1,9 +1,29 @@
 import tensorflow as tf
 
 
-def interact_encoder(user_vec, item_vec, hidden1_dim, hidden2_dim, activation=tf.nn.relu):
-    merge_vec = user_vec + item_vec
-    # merge_vec = tf.concat([user_vec, item_vec], axis=-1)
+INTERACT_FUNC_SET = {'sum', 'sub', 'mean', 'concat'}
+
+
+def interact_encoder(user_vec, item_vec, hidden1_dim, hidden2_dim,
+                     interact_type='sum', activation=tf.nn.relu):
+    '''
+    Calculate the interaction between the user and the item.
+    '''
+
+    interact_type = interact_type.lower()
+    assert interact_type in INTERACT_FUNC_SET
+
+    # interaction
+    _user = tf.tile(user_vec, [1, tf.shape(item_vec)[1], 1])
+    if interact_type == 'sum':
+        merge_vec = _user + item_vec
+    elif interact_type == 'sub':
+        merge_vec = _user - item_vec
+    elif interact_type == 'mean':
+        merge_vec = (_user + item_vec) / 2
+    elif interact_type == 'concat':
+        merge_vec = tf.concat([_user, item_vec], axis=-1)
+
     encoder = tf.layers.dense(merge_vec, hidden1_dim, activation=activation, name='encoder_hidden1',
                               reuse=tf.AUTO_REUSE)
     encoder = tf.layers.batch_normalization(encoder)
@@ -13,6 +33,9 @@ def interact_encoder(user_vec, item_vec, hidden1_dim, hidden2_dim, activation=tf
 
 
 def not_modules(input, hidden1_dim, hidden2_dim, activation=tf.nn.relu):
+    '''
+    An module to calculate the logical operation NOT(*).
+    '''
     not_encoder = tf.layers.dense(input, hidden1_dim, activation=activation, name='not_hidden1',
                                   reuse=tf.AUTO_REUSE)
     not_encoder = tf.layers.batch_normalization(not_encoder)
@@ -22,6 +45,9 @@ def not_modules(input, hidden1_dim, hidden2_dim, activation=tf.nn.relu):
 
 
 def cosine_probability(vec_a, vec_b):
+    '''
+    Calculate the cosine similarity between {vec_a} and {vec_b}.
+    '''
     a_norm = tf.sqrt(tf.reduce_sum(tf.square(vec_a), axis=-1))
     b_norm = tf.sqrt(tf.reduce_sum(tf.square(vec_b), axis=-1))
     _prod = tf.multiply(vec_a, vec_b)
@@ -31,14 +57,17 @@ def cosine_probability(vec_a, vec_b):
 
 
 def noam_scheme(init_lr, global_step, warmup_steps=4000.):
-    '''Noam scheme learning rate decay.'''
+    '''
+    Noam scheme learning rate decay.
+    '''
     step = tf.cast(global_step + 1, dtype=tf.float32)
     return init_lr * warmup_steps ** 0.5 * tf.minimum(step * warmup_steps ** -1.5, step ** -0.5)
 
 
 class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
     '''
-    This is a rnn cell for OR(*) operation.
+    An module to calculate the logical operation OR(*).
+    This is a rnn cell, each time can just operate between 2 vector.
 
     `input` is a matrix without step 0,
     and `state` is initialized to the vector at step 0.
