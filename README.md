@@ -3,7 +3,7 @@
 
 This isn't an official code. I tried to implement the paper as I understood.
 
-### The basic idea of the paper 
+## The basic idea of the paper 
 
 The paper propose a Modularized Logical Neural Network architecture, which learns basic logical operations 
 such as AND, OR, and NOT as neural modules based on logical regularizer, and learns logic variables 
@@ -12,14 +12,14 @@ neural network, so that logical reasoning and prediction can be conducted in a c
 
 ![figure0](./fig/fig0.png)
 
-### Requirements
+## Requirements
 
 - python3
 - numpy
 - tqdm
 - tensorflow==1.11.0
 
-### Training
+## Training
 
 - First. Run the command below to download Movielens-100K dataset.
 ```shell script
@@ -56,7 +56,7 @@ After that you can see logs are printed. Also the tensorboard.
 ![lr noam](./fig/fig1.png)    ![logical loss](./fig/fig2.png)   
 ![l2 loss](./fig/fig3.png)    ![loss curve](./fig/fig4.png)
 
-### Test
+## Test
 - Run
 ```shell script
 # python test.py --ckpt model_ckpt/test1/{your_model_name}
@@ -72,7 +72,7 @@ top3 accuracy: 0.9978791092258749
 ***Some hyper-parameter wasn't mentioned in paper, and now I'm tuning. 
 The results may be not satisfying.***
 
-### Note
+## Note
 
 - adding fast searching strategy, making inference faster.
 
