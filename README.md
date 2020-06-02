@@ -64,6 +64,11 @@ After that you can see logs are printed. Also the tensorboard.
 python test.py --ckpt model_ckpt/test1/nlr-13500
 ```
 
+Then, you can see the log below.
+```shell script
+top3 accuracy: 0.9978791092258749
+```
+
 ***Some hyper-parameter wasn't mentioned in paper, and now I'm tuning. 
 The results may be not satisfying.***
 

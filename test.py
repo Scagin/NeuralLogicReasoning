@@ -36,26 +36,27 @@ def test():
         items_embedding_matrix = sess.run(model.item_embedding_layer)
         items_embedding_matrix = items_embedding_matrix[:, np.newaxis, :]
 
-        topk = 10
+        topk = 3
         num_right_samples = 0
         for user, hist, feedback, label in tqdm.tqdm(zip(test_users, test_hist_items, test_scores,
                                                          test_labels)):
             user_data, items_data, feedback_data = data_loader.test_batch(user, hist, feedback,
                                                                           user_2_id, item_2_id)
 
-            prob = sess.run(model.probability_pos,
-                            feed_dict={model.input_user: user_data, model.input_items: items_data,
-                                       model.input_feedback_score: feedback_data,
-                                       model.target_emb_vec: items_embedding_matrix})
+            prob_pos = sess.run(model.probability_pos,
+                                feed_dict={model.input_user: user_data,
+                                           model.input_items: items_data,
+                                           model.input_feedback_score: feedback_data,
+                                           model.target_emb_vec: items_embedding_matrix})
 
-            prob = np.squeeze(prob, axis=1)
-            pred_item_ids = np.argsort(prob, axis=0)[:topk]
+            prob_pos = np.squeeze(prob_pos, axis=1)
+            pred_item_ids = np.argsort(prob_pos, axis=0)[:topk:-1]
+            sorted_prob = np.sort(prob_pos, axis=0)[:topk:-1]
             pred_items = [id_2_item.get(int(id), '<unk>') for id in pred_item_ids]
-            sorted_prob = np.sort(prob, axis=0)[:topk]
             if label in pred_items:
                 num_right_samples += 1
 
-        print('top {} accuracy: {}'.format(topk, num_right_samples / len(test_labels)))
+        print('top{} accuracy: {}'.format(topk, num_right_samples / len(test_labels)))
 
 
 if __name__ == '__main__':

@@ -26,9 +26,9 @@ def interact_encoder(user_vec, item_vec, hidden1_dim, hidden2_dim,
 
     encoder = tf.layers.dense(merge_vec, hidden1_dim, activation=activation, name='encoder_hidden1',
                               reuse=tf.AUTO_REUSE)
-    encoder = tf.layers.batch_normalization(encoder)
+    encoder = tf.layers.batch_normalization(encoder, name='encoder_bn1', reuse=tf.AUTO_REUSE)
     encoder = tf.layers.dense(encoder, hidden2_dim, name='encoder_hidden2', reuse=tf.AUTO_REUSE)
-    encoder = tf.layers.batch_normalization(encoder)
+    encoder = tf.layers.batch_normalization(encoder, name='encoder_bn2', reuse=tf.AUTO_REUSE)
     return encoder
 
 
@@ -38,9 +38,9 @@ def not_modules(input, hidden1_dim, hidden2_dim, activation=tf.nn.relu):
     '''
     not_encoder = tf.layers.dense(input, hidden1_dim, activation=activation, name='not_hidden1',
                                   reuse=tf.AUTO_REUSE)
-    not_encoder = tf.layers.batch_normalization(not_encoder)
+    not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn1', reuse=tf.AUTO_REUSE)
     not_encoder = tf.layers.dense(not_encoder, hidden2_dim, name='not_hidden2', reuse=tf.AUTO_REUSE)
-    not_encoder = tf.layers.batch_normalization(not_encoder)
+    not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn2', reuse=tf.AUTO_REUSE)
     return not_encoder
 
 
@@ -73,7 +73,7 @@ class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
     and `state` is initialized to the vector at step 0.
     '''
 
-    def __init__(self, num_units_1, num_units_2, activation=None, reuse=None, name=None):
+    def __init__(self, num_units_1, num_units_2, activation=None, reuse=tf.AUTO_REUSE, name=None):
         super(OrMoudleCell, self).__init__(_reuse=reuse, name=name)
         self._num_units_1 = num_units_1
         self._num_units_2 = num_units_2
@@ -88,8 +88,9 @@ class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
         return self._num_units_2
 
     def build(self, inputs_shape):
-        self.layer_1 = tf.layers.Dense(self._num_units_1, activation=self._activation)
-        self.layer_2 = tf.layers.Dense(self._num_units_2)
+        self.layer_1 = tf.layers.Dense(self._num_units_1, activation=self._activation,
+                                       name="or_hidden1")
+        self.layer_2 = tf.layers.Dense(self._num_units_2, name="or_hidden2")
         self.built = True
 
     def call(self, inputs, state):
