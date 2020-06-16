@@ -28,7 +28,7 @@ class HyperParams:
     parser.add_argument('--warmup_steps', default=500, type=int,
                         help='warm up steps for adam optimizer.')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-    parser.add_argument('--num_epochs', default=50, type=int)
+    parser.add_argument('--num_epochs', default=20, type=int)
     parser.add_argument('--eval_per_steps', default=50, type=int, help='evaluate per steps.')
 
     # model

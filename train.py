@@ -84,7 +84,10 @@ def train():
 
         summary_writer = tf.summary.FileWriter(hp.tensorboard_dir, sess.graph)
 
+        stop_flag = False
         best_status = 99999
+        last_update_step = 0
+        max_nonupdate_steps = 1000
         num_batch = int((len(train_labels) - 1) / hp.batch_size + 1)
         for epoch in range(hp.num_epochs):
             batch_iter = data_loader.batch_iterator(train_users, train_hist_items, train_scores,
@@ -120,6 +123,7 @@ def train():
                     if eval_loss <= best_status:
                         is_best = '*'
                         best_status = eval_loss
+                        last_update_step = current_step
                         saver.save(sess, os.path.join(hp.checkpoint_dir, hp.ckpt_name),
                                    global_step=current_step)
                     else:
@@ -142,6 +146,17 @@ def train():
                                                         model.input_feedback_score: feedback_batch,
                                                         model.input_negative_sample: neg_batch,
                                                         model.input_target: label_batch})
+
+                if current_step - last_update_step >= max_nonupdate_steps:
+                    stop_flag = True
+                    break
+
+            if stop_flag:
+                break
+
+        builder = tf.saved_model.builder.SavedModelBuilder('./model_ckpt/model_pb')
+        builder.add_meta_graph_and_variables(sess, ["neural_logic_reasoning"])
+        builder.save()
 
 
 if __name__ == '__main__':

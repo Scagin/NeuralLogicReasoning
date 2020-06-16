@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-
 INTERACT_FUNC_SET = {'sum', 'sub', 'mean', 'concat'}
 
 
@@ -73,11 +72,15 @@ class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
     and `state` is initialized to the vector at step 0.
     '''
 
-    def __init__(self, num_units_1, num_units_2, activation=None, reuse=tf.AUTO_REUSE, name=None):
+    def __init__(self, num_units_1, num_units_2, interact_type="sum", activation=None,
+                 reuse=tf.AUTO_REUSE, name=None):
         super(OrMoudleCell, self).__init__(_reuse=reuse, name=name)
         self._num_units_1 = num_units_1
         self._num_units_2 = num_units_2
         self._activation = activation or tf.nn.tanh
+        interact_type = interact_type.lower()
+        assert interact_type in INTERACT_FUNC_SET
+        self.interact_type = interact_type
 
     @property
     def state_size(self):
@@ -94,7 +97,16 @@ class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
         self.built = True
 
     def call(self, inputs, state):
-        hidden = inputs + state
+        if self.interact_type == 'sum':
+            hidden = inputs + state
+        elif self.interact_type == 'sub':
+            hidden = inputs - state
+        elif self.interact_type == 'mean':
+            hidden = (inputs + state) / 2
+        elif self.interact_type == 'concat':
+            hidden = tf.concat([inputs, state], axis=-1)
+        else:
+            hidden = inputs + state
         hidden = self.layer_1(hidden)
         output = self.layer_2(hidden)
         return output, output
