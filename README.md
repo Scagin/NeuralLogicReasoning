@@ -19,6 +19,8 @@ neural network, so that logical reasoning and prediction can be conducted in a c
 - tqdm
 - tensorflow==1.11.0
 
+> Maybe the version of tensorflow doesn't matter a lot, and I have not tested.
+
 ## Training
 
 - First. Run the command below to download Movielens-100K dataset.
@@ -78,3 +80,5 @@ The results may be not satisfying.***
 - adding fast searching strategy, making inference faster.
 
 - some unconspicuous details.
+
+> Please offer your questions and suggestions by writing issues or sending email to 406493851@qq.com, so that I can improve it.
