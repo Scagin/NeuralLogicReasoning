@@ -66,7 +66,8 @@ python test.py --ckpt model_ckpt/test1/nlr-13500
 
 Then, you can see the log below.
 ```shell script
-top3 accuracy: 0.9978791092258749
+top10 accuracy: 0.021208907741251327
+NDCG@10: 0.01156174343312406
 ```
 
 ***Some hyper-parameter wasn't mentioned in paper, and now I'm tuning. 

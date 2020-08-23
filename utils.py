@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 
 
 def save_training_info(user2id, item2id, hypers, path):
@@ -33,3 +34,25 @@ def load_training_info(path):
 
     return user2id, item2id, hypers
 
+
+def calDCG(scores):
+    return np.sum(
+        np.divide(scores,
+                  np.log(np.arange(scores.shape[0], dtype=np.float32) + 2)),
+        dtype=np.float32)
+
+
+def calNDCG(rank_list, pos_items):
+    relevance = np.ones_like(pos_items)
+    it2rel = {it: r for it, r in zip(pos_items, relevance)}
+    rank_scores = np.asarray([it2rel.get(it, 0.0) for it in rank_list], dtype=np.float32)
+
+    idcg = calDCG(relevance)
+
+    dcg = calDCG(rank_scores)
+
+    if dcg == 0.0:
+        return 0.0
+
+    ndcg = dcg / idcg
+    return ndcg

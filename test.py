@@ -36,8 +36,9 @@ def test():
         items_embedding_matrix = sess.run(model.item_embedding_layer)
         items_embedding_matrix = items_embedding_matrix[:, np.newaxis, :]
 
-        topk = 3
+        topk = hp.topk
         num_right_samples = 0
+        ndcg_total = 0
         for user, hist, feedback, label in tqdm.tqdm(zip(test_users, test_hist_items, test_scores,
                                                          test_labels)):
             user_data, items_data, feedback_data = data_loader.test_batch(user, hist, feedback,
@@ -50,13 +51,15 @@ def test():
                                            model.target_emb_vec: items_embedding_matrix})
 
             prob_pos = np.squeeze(prob_pos, axis=1)
-            pred_item_ids = np.argsort(prob_pos, axis=0)[:topk:-1]
-            sorted_prob = np.sort(prob_pos, axis=0)[:topk:-1]
+            pred_item_ids = np.argsort(prob_pos, axis=0)[::-1][:topk]
             pred_items = [id_2_item.get(int(id), '<unk>') for id in pred_item_ids]
+            ndcg_score = utils.calNDCG(pred_item_ids, [item_2_id.get(label, len(item_2_id) + 1)])
+            ndcg_total += ndcg_score
             if label in pred_items:
                 num_right_samples += 1
 
         print('top{} accuracy: {}'.format(topk, num_right_samples / len(test_labels)))
+        print('NDCG@{}: {}'.format(topk, ndcg_total / len(test_labels)))
 
 
 if __name__ == '__main__':

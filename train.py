@@ -77,6 +77,8 @@ def train():
         if ckpt is None:
             logging.info('Initializing from scratch')
             sess.run(tf.global_variables_initializer())
+            if not os.path.exists(hp.checkpoint_dir):
+                os.mkdir(hp.checkpoint_dir)
             utils.save_training_info(user_2_id, item_2_id, model.get_hyper_parameter(),
                                      hp.checkpoint_dir)
         else:
@@ -87,7 +89,7 @@ def train():
         stop_flag = False
         best_status = 99999
         last_update_step = 0
-        max_nonupdate_steps = 1000
+        max_nonupdate_steps = 5000
         num_batch = int((len(train_labels) - 1) / hp.batch_size + 1)
         for epoch in range(hp.num_epochs):
             batch_iter = data_loader.batch_iterator(train_users, train_hist_items, train_scores,
@@ -154,9 +156,9 @@ def train():
             if stop_flag:
                 break
 
-        builder = tf.saved_model.builder.SavedModelBuilder('./model_ckpt/model_pb')
-        builder.add_meta_graph_and_variables(sess, ["neural_logic_reasoning"])
-        builder.save()
+        # builder = tf.saved_model.builder.SavedModelBuilder('./model_ckpt/model_pb')
+        # builder.add_meta_graph_and_variables(sess, ["neural_logic_reasoning"])
+        # builder.save()
 
 
 if __name__ == '__main__':
