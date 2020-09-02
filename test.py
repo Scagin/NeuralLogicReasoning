@@ -1,4 +1,5 @@
 import tqdm
+import random
 import numpy as np
 import tensorflow as tf
 
@@ -37,10 +38,13 @@ def test():
         items_embedding_matrix = items_embedding_matrix[:, np.newaxis, :]
 
         topk = hp.topk
-        num_right_samples = 0
+        count = 0
+        hr_total = 0
         ndcg_total = 0
         for user, hist, feedback, label in tqdm.tqdm(zip(test_users, test_hist_items, test_scores,
                                                          test_labels)):
+            # if random.random() > 0.01:
+            #     continue
             user_data, items_data, feedback_data = data_loader.test_batch(user, hist, feedback,
                                                                           user_2_id, item_2_id)
 
@@ -52,14 +56,18 @@ def test():
 
             prob_pos = np.squeeze(prob_pos, axis=1)
             pred_item_ids = np.argsort(prob_pos, axis=0)[::-1][:topk]
-            pred_items = [id_2_item.get(int(id), '<unk>') for id in pred_item_ids]
-            ndcg_score = utils.calNDCG(pred_item_ids, [item_2_id.get(label, len(item_2_id) + 1)])
-            ndcg_total += ndcg_score
-            if label in pred_items:
-                num_right_samples += 1
+            label_ids = [item_2_id.get(label, item_2_id[data_loader.UNKNOWN_TAG])]
 
-        print('top{} accuracy: {}'.format(topk, num_right_samples / len(test_labels)))
-        print('NDCG@{}: {}'.format(topk, ndcg_total / len(test_labels)))
+            ndcg_score = utils.calNDCG(pred_item_ids, label_ids)
+            ndcg_total += ndcg_score
+
+            hr_score = len(set(pred_item_ids).intersection(set(label_ids))) / len(label_ids)
+            hr_total += hr_score
+
+            count += 1
+
+        print('HR@{}: {:.6f}'.format(topk, hr_total / count))
+        print('NDCG@{}: {:.6f}'.format(topk, ndcg_total / count))
 
 
 if __name__ == '__main__':

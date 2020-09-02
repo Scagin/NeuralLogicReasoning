@@ -25,9 +25,9 @@ def interact_encoder(user_vec, item_vec, hidden1_dim, hidden2_dim,
 
     encoder = tf.layers.dense(merge_vec, hidden1_dim, activation=activation, name='encoder_hidden1',
                               reuse=tf.AUTO_REUSE)
-    encoder = tf.layers.batch_normalization(encoder, name='encoder_bn1', reuse=tf.AUTO_REUSE)
+    # encoder = tf.layers.batch_normalization(encoder, name='encoder_bn1', reuse=tf.AUTO_REUSE)
     encoder = tf.layers.dense(encoder, hidden2_dim, name='encoder_hidden2', reuse=tf.AUTO_REUSE)
-    encoder = tf.layers.batch_normalization(encoder, name='encoder_bn2', reuse=tf.AUTO_REUSE)
+    # encoder = tf.layers.batch_normalization(encoder, name='encoder_bn2', reuse=tf.AUTO_REUSE)
     return encoder
 
 
@@ -37,9 +37,9 @@ def not_modules(input, hidden1_dim, hidden2_dim, activation=tf.nn.relu):
     '''
     not_encoder = tf.layers.dense(input, hidden1_dim, activation=activation, name='not_hidden1',
                                   reuse=tf.AUTO_REUSE)
-    not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn1', reuse=tf.AUTO_REUSE)
+    # not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn1', reuse=tf.AUTO_REUSE)
     not_encoder = tf.layers.dense(not_encoder, hidden2_dim, name='not_hidden2', reuse=tf.AUTO_REUSE)
-    not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn2', reuse=tf.AUTO_REUSE)
+    # not_encoder = tf.layers.batch_normalization(not_encoder, name='not_bn2', reuse=tf.AUTO_REUSE)
     return not_encoder
 
 
@@ -77,7 +77,7 @@ class OrMoudleCell(tf.nn.rnn_cell.RNNCell):
         super(OrMoudleCell, self).__init__(_reuse=reuse, name=name)
         self._num_units_1 = num_units_1
         self._num_units_2 = num_units_2
-        self._activation = activation or tf.nn.tanh
+        self._activation = activation or tf.nn.relu
         interact_type = interact_type.lower()
         assert interact_type in INTERACT_FUNC_SET
         self.interact_type = interact_type

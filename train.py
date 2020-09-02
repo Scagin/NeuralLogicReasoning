@@ -1,4 +1,5 @@
 import os
+import random
 import logging
 import numpy as np
 import tensorflow as tf
@@ -9,44 +10,39 @@ from model import NLR_model
 from hyper_params import HyperParams
 
 
-def evaluate(sess, model, users, hist_items, scores, labels, user_2_id, item_2_id, hist_len=5,
-             batch_size=128):
-    batch_iter = data_loader.batch_iterator(users, hist_items, scores, labels, user_2_id, item_2_id,
-                                            history_len=hist_len, batch_size=batch_size,
-                                            shuffle=False)
-    eval_target_loss = 0
-    eval_l2_loss = 0
-    eval_logical_loss = 0
-    eval_loss = 0
-    eval_pos_prob = 0
-    eval_neg_prob = 0
-    for i, batch in enumerate(batch_iter):
-        user_batch, items_batch, feedback_batch, label_batch, neg_batch = batch
+def evaluate(sess, model, users, hist_items, scores, labels,
+             user_2_id, item_2_id, test_ratio=0.5, topk=5):
+    count = 0
+    hr_total = 0
+    ndcg_total = 0
 
-        _pos_prob, _neg_prob, _target_loss, _l2_loss, _logical_loss, _loss = sess.run(
-            [model.probability_pos, model.probability_neg, model.traget_loss,
-             model.l2_loss, model.logical_loss, model.loss],
-            feed_dict={model.input_user: user_batch, model.input_items: items_batch,
-                       model.input_feedback_score: feedback_batch,
-                       model.input_negative_sample: neg_batch,
-                       model.input_target: label_batch})
+    items_embedding_matrix = sess.run(model.item_embedding_layer)
+    items_embedding_matrix = items_embedding_matrix[:, np.newaxis, :]
+    for user, hist, feedback, label in zip(users, hist_items, scores, labels):
+        if random.random() > test_ratio:
+            continue
+        user_data, items_data, feedback_data = data_loader.test_batch(user, hist, feedback,
+                                                                      user_2_id, item_2_id)
 
-        eval_loss += _loss
-        eval_target_loss += _target_loss
-        eval_l2_loss += _l2_loss
-        eval_logical_loss += _logical_loss
-        eval_pos_prob += np.sum(_pos_prob)
-        eval_neg_prob += np.sum(_neg_prob)
+        prob_pos = sess.run(model.probability_pos,
+                            feed_dict={model.input_user: user_data,
+                                       model.input_items: items_data,
+                                       model.input_feedback_score: feedback_data,
+                                       model.target_emb_vec: items_embedding_matrix})
 
-    eval_target_loss /= (i + 1)
-    eval_l2_loss /= (i + 1)
-    eval_logical_loss /= (i + 1)
-    eval_loss /= (i + 1)
-    eval_pos_prob /= len(labels)
-    eval_neg_prob /= len(labels)
+        prob_pos = np.squeeze(prob_pos, axis=1)
+        pred_item_ids = np.argsort(prob_pos, axis=0)[::-1][:topk]
+        label_ids = [item_2_id.get(label, item_2_id[data_loader.UNKNOWN_TAG])]
 
-    return eval_target_loss, eval_l2_loss, eval_logical_loss, \
-           eval_loss, eval_pos_prob, eval_neg_prob
+        ndcg_score = utils.calNDCG(pred_item_ids, label_ids)
+        ndcg_total += ndcg_score
+
+        hr_score = len(set(pred_item_ids).intersection(set(label_ids))) / len(label_ids)
+        hr_total += hr_score
+
+        count += 1
+
+    return hr_total / count, ndcg_total / count
 
 
 def train():
@@ -87,9 +83,10 @@ def train():
         summary_writer = tf.summary.FileWriter(hp.tensorboard_dir, sess.graph)
 
         stop_flag = False
-        best_status = 99999
+        best_hr = 0
+        best_ndcg = 0
         last_update_step = 0
-        max_nonupdate_steps = 5000
+        max_nonupdate_steps = 100000
         num_batch = int((len(train_labels) - 1) / hp.batch_size + 1)
         for epoch in range(hp.num_epochs):
             batch_iter = data_loader.batch_iterator(train_users, train_hist_items, train_scores,
@@ -113,18 +110,16 @@ def train():
                                    model.input_target: label_batch})
 
                     # evaluate validation dataset
-                    eval_target_loss, eval_l2_loss, eval_logical_loss, \
-                    eval_loss, eval_pos_prob, eval_neg_prob = evaluate(sess, model, eval_users,
-                                                                       eval_hist_items, eval_scores,
-                                                                       eval_labels, user_2_id,
-                                                                       item_2_id, hp.history_len,
-                                                                       hp.eval_batch_size)
+                    hr_k, ndcg_k = evaluate(sess, model, eval_users, eval_hist_items, eval_scores,
+                                            eval_labels, user_2_id, item_2_id, hp.history_len,
+                                            hp.eval_batch_size)
                     summary_writer.add_summary(_summary, global_step=current_step)
 
                     # save
-                    if eval_loss <= best_status:
+                    if ndcg_k >= best_ndcg or hr_k >= best_hr:
                         is_best = '*'
-                        best_status = eval_loss
+                        best_ndcg = ndcg_k
+                        best_hr = hr_k
                         last_update_step = current_step
                         saver.save(sess, os.path.join(hp.checkpoint_dir, hp.ckpt_name),
                                    global_step=current_step)
@@ -133,14 +128,11 @@ def train():
 
                     print('\nepoch: {}, step: {}, train pos prob: {:.4f}, train neg prob: {:.4f}, '
                           'train target loss: {:.4f}, train l2 loss: {:.4f}, '
-                          'train logical loss: {:.4f}, train loss: {:.4f}\n'
-                          '\t\t\t\t\t\t\teval pos prob: {:.4f}, eval neg prob: {:.4f}, '
-                          'eval target loss: {:.4f}, eval l2 loss: {:.4f}, '
-                          'eval logical loss: {:.4f}, eval loss: {:.4f} {}'
+                          'train logical loss: {:.4f}, train loss: {:.4f} '
+                          'eval hr@k: {:.4f}, eval ndcg@k: {:.4f} {}'
                           .format(epoch, current_step, np.mean(_pos_prob), np.mean(_neg_prob),
-                                  _target_loss, _l2_loss, _logical_loss, _loss,
-                                  eval_pos_prob, eval_neg_prob, eval_target_loss, eval_l2_loss,
-                                  eval_logical_loss, eval_loss, is_best))
+                                  _target_loss, _l2_loss, _logical_loss, _loss, hr_k, ndcg_k,
+                                  is_best))
 
                 # train
                 _ = sess.run(model.train_op, feed_dict={model.input_user: user_batch,
@@ -155,10 +147,6 @@ def train():
 
             if stop_flag:
                 break
-
-        # builder = tf.saved_model.builder.SavedModelBuilder('./model_ckpt/model_pb')
-        # builder.add_meta_graph_and_variables(sess, ["neural_logic_reasoning"])
-        # builder.save()
 
 
 if __name__ == '__main__':

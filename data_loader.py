@@ -107,7 +107,12 @@ def batch_iterator(users, hist_items, feedback_scores, labels, user_2_id, item_2
         start = i * batch_size
         end = min((i + 1) * batch_size, len(labels))
 
-        yield user_data[start: end], hist_data[start: end], feedback_data[start: end], \
+        # shuffle history items
+        hist_rand_ind = np.random.permutation(range(history_len))
+        hist_data_batch = hist_data[start: end][:, hist_rand_ind]
+        feedback_data_batch = feedback_data[start: end][:, hist_rand_ind]
+
+        yield user_data[start: end], hist_data_batch, feedback_data_batch, \
               label_data[start: end], negative_samples[start: end]
 
 
