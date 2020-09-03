@@ -86,7 +86,7 @@ def train():
         best_hr = 0
         best_ndcg = 0
         last_update_step = 0
-        max_nonupdate_steps = 100000
+        max_nonupdate_steps = 50000
         num_batch = int((len(train_labels) - 1) / hp.batch_size + 1)
         for epoch in range(hp.num_epochs):
             batch_iter = data_loader.batch_iterator(train_users, train_hist_items, train_scores,
@@ -111,8 +111,7 @@ def train():
 
                     # evaluate validation dataset
                     hr_k, ndcg_k = evaluate(sess, model, eval_users, eval_hist_items, eval_scores,
-                                            eval_labels, user_2_id, item_2_id, hp.history_len,
-                                            hp.eval_batch_size)
+                                            eval_labels, user_2_id, item_2_id)
                     summary_writer.add_summary(_summary, global_step=current_step)
 
                     # save

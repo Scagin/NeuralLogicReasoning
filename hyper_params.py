@@ -25,10 +25,10 @@ class HyperParams:
     parser.add_argument('--logical_weight', default=0.1, type=int,
                         help='the weight of logical regularizer loss.')
     parser.add_argument('--history_len', default=5, type=int, help='length of historical items.')
-    parser.add_argument('--warmup_steps', default=4000, type=int,
+    parser.add_argument('--warmup_steps', default=10000, type=int,
                         help='warm up steps for adam optimizer.')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-    parser.add_argument('--num_epochs', default=1000, type=int)
+    parser.add_argument('--num_epochs', default=200, type=int)
     parser.add_argument('--eval_per_steps', default=1000, type=int, help='evaluate per steps.')
 
     # model
@@ -45,5 +45,5 @@ class HyperParams:
 
     # test
     parser.add_argument('--test_datas', default='dataset/ml-100k/test.data', help='test data')
-    parser.add_argument('--ckpt', default='model_ckpt/test1/nlr-34000', help='checkpoint file path')
-    parser.add_argument('--topk', default=10, help='how many items return from sorted result list.')
+    parser.add_argument('--ckpt', default='model_ckpt/my_model/nlr-437000', help='checkpoint file path')
+    parser.add_argument('--topk', default=5, help='how many items return from sorted result list.')
