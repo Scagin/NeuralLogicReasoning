@@ -55,8 +55,8 @@ After that you can see logs are printed. Also the tensorboard.
 
 - Tensorboard curve
 
-![lr noam](./fig/fig1.png)    ![logical loss](./fig/fig2.png)   
-![l2 loss](./fig/fig3.png)    ![loss curve](./fig/fig4.png)
+![lr noam](fig/fig_1.png)    ![logical loss](fig/fig_2.png)   
+![l2 loss](fig/fig_3.png)    ![loss curve](fig/fig_4.png)
 
 ## Test
 - Run
@@ -68,8 +68,8 @@ python test.py --ckpt model_ckpt/test1/nlr-13500
 
 Then, you can see the log below.
 ```shell script
-HR@5: 0.090909
-NDCG@5: 0.063039
+HR@10: 0.081654
+NDCG@10: 0.037584
 ```
 
 ***Some hyper-parameter wasn't mentioned in paper, and now I'm tuning. 

@@ -43,8 +43,8 @@ def test():
         ndcg_total = 0
         for user, hist, feedback, label in tqdm.tqdm(zip(test_users, test_hist_items, test_scores,
                                                          test_labels)):
-            if random.random() > 0.02:
-                continue
+            # if random.random() > 0.02:
+            #     continue
             user_data, items_data, feedback_data = data_loader.test_batch(user, hist, feedback,
                                                                           user_2_id, item_2_id)
 
